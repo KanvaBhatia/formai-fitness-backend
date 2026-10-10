@@ -9,7 +9,14 @@ source .venv/bin/activate
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Requires `.env` with `GROQ_API_KEY`.
+## Environment
+
+Create `.env` from `.env.example`:
+
+- `LLM_BASE_URL` / `LLM_API_KEY` / `LLM_MODEL` — OpenAI-compatible LLM endpoint
+  (LiteLLM proxy serving Kimi K3) for coaching feedback and Ask Coach.
+- `GROQ_API_KEY` — Groq API key, used only for Whisper speech-to-text (`/coach/stt`).
+- TTS uses gTTS (no key required).
 
 ## API Endpoints
 

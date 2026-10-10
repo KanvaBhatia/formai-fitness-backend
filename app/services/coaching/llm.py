@@ -1,18 +1,22 @@
 """
 LLM coaching service.
 
-Wraps a Groq chat client to generate short, spoken coaching feedback
-based on workout events and detected form issues.
+Wraps an OpenAI-compatible chat client (LiteLLM proxy serving Kimi K3)
+to generate short, spoken coaching feedback based on workout events
+and detected form issues.
 """
+
+import os
 
 from app.services.config.workout_config import PROMPT
 
 
 class LLMCoach:
-    """Generates coaching feedback via Groq LLM."""
+    """Generates coaching feedback via an OpenAI-compatible LLM endpoint."""
 
-    def __init__(self, groq_client):
-        self.client = groq_client
+    def __init__(self, openai_client):
+        self.client = openai_client
+        self.model = os.getenv("LLM_MODEL", "global.moonshotai.kimi-k3")
         self.history: list[dict] = []
         self.system_prompt = PROMPT
 
@@ -29,7 +33,7 @@ class LLMCoach:
         ]
 
         response = self.client.chat.completions.create(
-            model="openai/gpt-oss-120b",
+            model=self.model,
             messages=messages,
             temperature=0.4,
         )
@@ -51,7 +55,7 @@ class LLMCoach:
         ]
 
         response = self.client.chat.completions.create(
-            model="openai/gpt-oss-120b",
+            model=self.model,
             messages=messages,
             temperature=0.4,
         )

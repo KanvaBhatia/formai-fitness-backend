@@ -1,8 +1,8 @@
 """
 AI coaching routes — feedback generation and question answering.
 
-Uses Groq LLM for text generation, Groq Whisper for speech-to-text,
-and gTTS for text-to-speech audio playback.
+Uses an OpenAI-compatible LLM endpoint (LiteLLM proxy → Kimi K3) for text
+generation, Groq Whisper for speech-to-text, and gTTS for audio playback.
 """
 
 import base64
@@ -19,10 +19,10 @@ router = APIRouter(prefix="/coach", tags=["coach"])
 _voice_pipeline: VoicePipeline | None = None
 _llm_coach: LLMCoach | None = None
 _tts: TextToSpeech | None = None
-_groq_client = None
+_groq_client = None  # kept for Whisper STT only
 
 
-def init_coach(voice_pipeline: VoicePipeline, llm_coach: LLMCoach, tts: TextToSpeech, groq_client):
+def init_coach(voice_pipeline: VoicePipeline, llm_coach: LLMCoach, tts: TextToSpeech, groq_client=None):
     """Called once during app startup to inject shared coach services."""
     global _voice_pipeline, _llm_coach, _tts, _groq_client
     _voice_pipeline = voice_pipeline

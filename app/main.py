@@ -1,8 +1,9 @@
 """
 FastAPI application entry point.
 
-Initializes the database, Groq client, voice coaching pipeline,
-and registers all API + WebSocket routes.
+Initializes the database, LLM client (Kimi K3 via LiteLLM proxy),
+Groq client (Whisper STT), voice coaching pipeline, and registers
+all API + WebSocket routes.
 """
 
 import os
@@ -23,22 +24,34 @@ async def lifespan(app: FastAPI):
     """Initialize shared services on startup."""
     init_db()
 
-    # Initialize Groq client and coaching pipeline if API key is available
-    api_key = os.getenv("GROQ_API_KEY", "")
-    if api_key:
-        from groq import Groq
+    llm_api_key = os.getenv("LLM_API_KEY", "")
+    llm_base_url = os.getenv("LLM_BASE_URL", "")
+    groq_api_key = os.getenv("GROQ_API_KEY", "")
+
+    if llm_api_key and llm_base_url:
+        from openai import OpenAI
         from app.services.coaching.llm import LLMCoach
         from app.services.coaching.tts import TextToSpeech
         from app.services.coaching.voice_pipeline import VoicePipeline
 
-        groq_client = Groq(api_key=api_key)
-        llm_coach = LLMCoach(groq_client)
+        # LLM client — OpenAI-compatible LiteLLM proxy (Kimi K3)
+        openai_client = OpenAI(api_key=llm_api_key, base_url=llm_base_url)
+        llm_coach = LLMCoach(openai_client)
         tts = TextToSpeech()
         voice_pipeline = VoicePipeline(llm_coach, tts)
+
+        # Groq client — only used for Whisper speech-to-text
+        groq_client = None
+        if groq_api_key:
+            from groq import Groq
+            groq_client = Groq(api_key=groq_api_key)
+
         coach.init_coach(voice_pipeline, llm_coach, tts, groq_client)
-        print("✅ Voice coaching pipeline initialized")
+        print("✅ Voice coaching pipeline initialized (Kimi K3 via LiteLLM)")
+        if not groq_client:
+            print("⚠️  GROQ_API_KEY not set — speech-to-text disabled")
     else:
-        print("⚠️  GROQ_API_KEY not set — voice coaching disabled")
+        print("⚠️  LLM_API_KEY / LLM_BASE_URL not set — voice coaching disabled")
 
     yield
 
