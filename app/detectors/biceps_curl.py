@@ -2,10 +2,12 @@
 Biceps curl exercise detector.
 
 Tracks elbow angle for rep counting (curl up < 50°, extend down > 160°),
-elbow drift from shoulder, and torso swing detection.
+elbow drift from shoulder, torso swing detection, and rep tempo (flags
+reps performed too quickly, which can cause injury).
 """
 
 import math
+import time
 from app.core.base_exercise import BaseExercise
 
 
@@ -15,6 +17,9 @@ class BicepsCurlDetector(BaseExercise):
     MIN_VISIBILITY = 0.7
     ELBOW_DRIFT_TOLERANCE = 0.06
     SWING_THRESHOLD = 15
+    # Minimum seconds between consecutive reps; faster reps rely on
+    # momentum and risk injury, so we flag them for the coach.
+    MIN_REP_SECONDS = 1.5
 
     LEFT_SHOULDER = 11
     LEFT_ELBOW = 13
@@ -28,11 +33,15 @@ class BicepsCurlDetector(BaseExercise):
     def __init__(self):
         super().__init__()
         self._shoulder_x_baseline = None
+        self._last_rep_time = None
+        self._tempo_warning = False
 
     def reset(self):
         self.reps = 0
         self.stage = None
         self._shoulder_x_baseline = None
+        self._last_rep_time = None
+        self._tempo_warning = False
 
     def process(self, landmarks):
         left_vis = landmarks[self.LEFT_ELBOW].visibility
@@ -66,6 +75,12 @@ class BicepsCurlDetector(BaseExercise):
                 self.stage = "down"
                 self.reps += 1
 
+                now = time.monotonic()
+                if self._last_rep_time is not None:
+                    rep_interval = now - self._last_rep_time
+                    self._tempo_warning = rep_interval < self.MIN_REP_SECONDS
+                self._last_rep_time = now
+
         shoulder_x = landmarks[shoulder_idx].x
         elbow_x = landmarks[elbow_idx].x
         elbow_drift = abs(elbow_x - shoulder_x)
@@ -89,11 +104,14 @@ class BicepsCurlDetector(BaseExercise):
         else:
             swing_status = "SWINGING"
 
+        tempo_status = "SLOW DOWN" if self._tempo_warning else "TEMPO OK"
+
         return {
             "reps": self.reps,
             "elbow_angle": int(elbow_angle),
             "shoulder_status": shoulder_status,
             "swing_status": swing_status,
+            "tempo_status": tempo_status,
         }
 
     def _safe_angle(self, dx, dy):

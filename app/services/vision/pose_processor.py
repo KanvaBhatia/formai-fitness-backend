@@ -168,7 +168,7 @@ class PoseProcessor:
         elif ex_type == "Push-ups":
             label = f"BODY: {metrics.get('body_alignment', '')} | HIP: {metrics.get('hip_status', '')}"
         elif ex_type == "Biceps Curls (Dumbbell)":
-            label = f"SWING: {metrics.get('swing_status', '')}"
+            label = f"SWING: {metrics.get('swing_status', '')} | TEMPO: {metrics.get('tempo_status', '')}"
         elif ex_type == "Shoulder Press":
             label = f"EXT: {metrics.get('extension_status', '')} | BACK: {metrics.get('back_arch_status', '')}"
         elif ex_type == "Lunges":

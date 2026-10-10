@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
         from app.services.coaching.voice_pipeline import VoicePipeline
 
         # LLM client — OpenAI-compatible LiteLLM proxy (Kimi K3)
-        openai_client = OpenAI(api_key=llm_api_key, base_url=llm_base_url)
+        openai_client = OpenAI(api_key=llm_api_key, base_url=llm_base_url, default_headers={"OpenAI-Project": "default"},)
         llm_coach = LLMCoach(openai_client)
         tts = TextToSpeech()
         voice_pipeline = VoicePipeline(llm_coach, tts)
@@ -47,6 +47,7 @@ async def lifespan(app: FastAPI):
             groq_client = Groq(api_key=groq_api_key)
 
         coach.init_coach(voice_pipeline, llm_coach, tts, groq_client)
+        websocket.init_websocket(voice_pipeline, tts)
         print("✅ Voice coaching pipeline initialized (Kimi K3 via LiteLLM)")
         if not groq_client:
             print("⚠️  GROQ_API_KEY not set — speech-to-text disabled")

@@ -55,10 +55,11 @@ class AskResponse(BaseModel):
 @router.post("/feedback", response_model=FeedbackResponse)
 def coach_feedback(body: FeedbackRequest):
     """
-    Generate coaching feedback for a workout event.
+    Generate coaching feedback for a MAJOR workout event (LLM + TTS,
+    synchronous). Minor form issues are handled instantly over the
+    WebSocket via canned cues instead.
 
-    Events: workout_started, set_completed, workout_completed,
-            no_pose_detected, ongoing_form_check
+    Events: workout_started, set_completed, workout_completed
     """
     if not _voice_pipeline:
         return FeedbackResponse(text="Coach not available", audio_base64=None)
